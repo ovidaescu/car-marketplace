@@ -1,42 +1,36 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  background-color: rgb(201, 210, 203);
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+
+.form-container {
+  display: flex;
+  flex-direction: row;
+  max-width: 200px;
+  max-height: 50px;
+  margin-left: 100px;
+  margin-top: 50px;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+.form-container input {
+  max-width: 120px;
+  max-height: 50px;
+  margin-bottom: 10px;
+  padding: 10px;  
+  font-size: 16px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.button-container button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 120px; /* Fixed width */
+  height: 40px; /* Fixed height */
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.button-container button:hover {
+  background-color: #0056b3;
 }

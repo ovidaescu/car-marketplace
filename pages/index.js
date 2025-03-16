@@ -1,44 +1,172 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import carsData from '../data/cars';
 
 export default function Home() {
-  const [cars, setCars] = useState([]);
-  const [loading, setLoading] = useState(true);  // To track loading state
-  const [error, setError] = useState(null);  // For error handling
+  const [cars, setCars] = useState(carsData);
+  const [newCar, setNewCar] = useState({ make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' , dateAdded: ''});
+  const [editingCar, setEditingCar] = useState(null); // Track the car being edited
+  const [sortOption, setSortOption] = useState(''); // Define state for sorting option
+  const [filters, setFilters] = useState({
+    make: '',
+    model: '',
+    year: '',
+    fuel: '',
+  });
 
-  useEffect(() => {
-    const fetchCars = async () => {
-      try {
-        const response = await fetch('/api/cars');
-        if (!response.ok) {
-          throw new Error('Failed to fetch cars');
-        }
-        const data = await response.json();
-        console.log(data);  // Log data to check the format
-        setCars(data);
-      } catch (err) {
-        setError(err.message);  // If there's an error, display the message
-      } finally {
-        setLoading(false);  // Stop loading once the request is complete
-      }
-    };
 
-    fetchCars();
-  }, []);
+  const handleInputChange = (e) => {
+    setNewCar({ ...newCar, [e.target.name]: e.target.value });
+  };
+
+  const handleFilterChange = (e) => {
+    setFilters({ ...filters, [e.target.name]: e.target.value });
+  };
+
+  const addCar = () => {
+    if (!newCar.make || !newCar.model || !newCar.type || !newCar.year || !newCar.km || !newCar.fuel || !newCar.price || !newCar.dateAdded) {
+      alert('All fields are required');
+      return;
+    }
+
+    if (editingCar) {
+      // Update existing car
+      setCars(cars.map(car => (car.id === editingCar.id ? { ...newCar, id: editingCar.id } : car)));
+      setEditingCar(null); // Exit edit mode
+    } else {
+      // Add new car
+      const newCarEntry = { ...newCar, id: cars.length + 1, year: Number(newCar.year), price: Number(newCar.price) };
+      setCars([...cars, newCarEntry]);
+    }
+
+    setNewCar({ make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' ,dateAdded: ''}); // Reset form
+  };
+
+
+  const handleSortChange = (e) => {
+    const option = e.target.value;
+    setSortOption(option);
+
+    let sortedCars = [...cars];
+
+    if (option === 'newest-first') {
+      sortedCars.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+    } else if (option === 'oldest-first') {
+      sortedCars.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
+    } else if (option === 'price-low-high') {
+      sortedCars.sort((a, b) => a.price - b.price);
+    } else if (option === 'price-high-low') {
+      sortedCars.sort((a, b) => b.price - a.price);
+    } else if (option === 'year-new-old') {
+      sortedCars.sort((a, b) => b.year - a.year);
+    } else if (option === 'year-old-new') {
+      sortedCars.sort((a, b) => a.year - b.year);
+    } else if (option === 'km-low-high') {
+      sortedCars.sort((a, b) => a.km - b.km);
+    } else if (option === 'km-high-low') {
+      sortedCars.sort((a, b) => b.km - a.km);
+    }
+
+    setCars(sortedCars);
+  };
+
+  const deleteCar = (id) => {
+    setCars(cars.filter(car => car.id !== id));
+  };
+
+  const editCar = (car) => {
+    setNewCar(car); // Prefill the form
+    setEditingCar(car); // Set the car being edited
+  };
+
+  const filteredCars = cars.filter(car => {
+    return (
+      (filters.make ? car.make.toLowerCase().includes(filters.make.toLowerCase()) : true) &&
+      (filters.model ? car.model.toLowerCase().includes(filters.model.toLowerCase()) : true) &&
+      (filters.year ? car.year === Number(filters.year) : true) &&
+      (filters.fuel ? car.fuel.toLowerCase().includes(filters.fuel.toLowerCase()) : true)
+    );
+  });
 
   return (
     <div>
       <h1>Welcome to the Car Marketplace</h1>
-      {loading && <p>Loading cars...</p>}  {/* Show loading text */}
-      {error && <p style={{ color: 'red' }}>{error}</p>}  {/* Show error message */}
+
+
+       {/* Sorting Dropdown */}
+       <select value={sortOption} onChange={handleSortChange}>
+        <option value="">Sort By</option>
+        <option value="newest-first">Date Added (Newest First)</option>
+        <option value="oldest-first">Date Added (Oldest First)</option>
+        <option value="price-low-high">Price (Low to High)</option>
+        <option value="price-high-low">Price (High to Low)</option>
+        <option value="year-new-old">Year (Newest to Oldest)</option>
+        <option value="year-old-new">Year (Oldest to Newest)</option>
+        <option value="km-low-high">Kilometers (Low to High)</option>
+        <option value="km-high-low">Kilometers (High to Low)</option>
+      </select>
+
+       {/* Filter Inputs */}
+       <div className="filter-container">
+        <input
+          type="text"
+          name="make"
+          placeholder="Filter by Make"
+          value={filters.make}
+          onChange={handleFilterChange}
+        />
+        <input
+          type="text"
+          name="model"
+          placeholder="Filter by Model"
+          value={filters.model}
+          onChange={handleFilterChange}
+        />
+        <input
+          type="number"
+          name="year"
+          placeholder="Filter by Year"
+          value={filters.year}
+          onChange={handleFilterChange}
+        />
+        <input
+          type="text"
+          name="fuel"
+          placeholder="Filter by Fuel Type"
+          value={filters.fuel}
+          onChange={handleFilterChange}
+        />
+      </div>
+
+
+      {/* Form to Add or Edit Car */}
+      <div className="form-container">
+        <input type="text" name="make" placeholder="Make" value={newCar.make} onChange={handleInputChange} />
+        <input type="text" name="model" placeholder="Model" value={newCar.model} onChange={handleInputChange} />
+        <input type="text" name="type" placeholder="Type" value={newCar.type} onChange={handleInputChange} />
+        <input type="number" name="year" placeholder="Year" value={newCar.year} onChange={handleInputChange} />
+        <input type="number" name="km" placeholder="Km" value={newCar.km} onChange={handleInputChange} />
+        <input type="text" name="fuel" placeholder="Fuel Type" value={newCar.fuel} onChange={handleInputChange} />
+        <input type="number" name="price" placeholder="Price" value={newCar.price} onChange={handleInputChange} />
+        <input type="string" name="dateAdded" placeholder="Date" value={newCar.dateAdded} onChange={handleInputChange} />
+        <div className="button-container">
+          <button onClick={addCar}>{editingCar ? 'Update Car' : 'Add Car'}</button>
+        </div>
+      </div>
+
+      <br />
+
+      {/* Display Filtered Cars */}
       <ul>
-        {Array.isArray(cars) && cars.length > 0 ? (
-          cars.map((car) => (
+        {filteredCars.length > 0 ? (
+          filteredCars.map((car) => (
             <li key={car.id}>
-              {car.make} {car.model} - ${car.price}
+              {car.make} {car.model}, {car.type}, {car.year}, {car.km} km, {car.fuel} - {car.price}€
+              <button onClick={() => editCar(car)} style={{ marginLeft: '10px', color: 'blue' }}>Edit</button>
+              <button onClick={() => deleteCar(car.id)} style={{ marginLeft: '10px', color: 'red' }}>Delete</button>
             </li>
           ))
         ) : (
-          <p>No cars available</p>  // If no cars in the array
+          <p>No cars available</p>
         )}
       </ul>
     </div>

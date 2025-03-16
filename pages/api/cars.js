@@ -1,3 +1,5 @@
+/*
+
 import client from '../../lib/db';
 
 export default async function handler(req, res) {
@@ -9,3 +11,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to fetch cars' });
   }
 }
+*/
