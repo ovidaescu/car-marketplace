@@ -3,7 +3,7 @@ import carsData, { validMakes, validModels, validTypes, validFuels } from '../da
 
 export default function Home() {
   const [cars, setCars] = useState(carsData);
-  const [newCar, setNewCar] = useState({ make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' , dateAdded: ''});
+  const [newCar, setNewCar] = useState({ url: '',make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' , dateAdded: ''});
   const [editingCar, setEditingCar] = useState(null); // Track the car being edited
   const [sortOption, setSortOption] = useState(''); // Define state for sorting option
   const [filters, setFilters] = useState({
@@ -23,6 +23,10 @@ export default function Home() {
   };
 
   const validateCar = (car) => {
+
+    if (!car.url){
+      return 'URL field should not be empty';
+    }
 
     if (!car.make || !validMakes.includes(car.make)) {
       return `Make must be one of the following: ${validMakes.join(', ')}`;
@@ -91,7 +95,7 @@ export default function Home() {
       setCars([...cars, newCarEntry]);
     }
 
-    setNewCar({ make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' ,dateAdded: ''}); // Reset form
+    setNewCar({ url: '',make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' ,dateAdded: ''}); // Reset form
   };
 
 
@@ -193,6 +197,7 @@ export default function Home() {
 
       {/* Form to Add or Edit Car */}
       <div className="form-container">
+        <input type="text" name="url" placeholder="URL" value={newCar.url} onChange={handleInputChange} />
         <input type="text" name="make" placeholder="Make" value={newCar.make} onChange={handleInputChange} />
         <input type="text" name="model" placeholder="Model" value={newCar.model} onChange={handleInputChange} />
         <input type="text" name="type" placeholder="Type" value={newCar.type} onChange={handleInputChange} />
