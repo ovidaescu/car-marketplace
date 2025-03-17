@@ -206,21 +206,34 @@ export default function Home() {
       </div>
 
       <br />
+      <br />
+      <br />
 
       {/* Display Filtered Cars */}
-      <ul>
+      <div className="car-list">
         {filteredCars.length > 0 ? (
           filteredCars.map((car) => (
-            <li key={car.id}>
-              {car.make} {car.model}, {car.type}, {car.year}, {car.km} km, {car.fuel} - {car.price}€, {car.dateAdded}
-              <button onClick={() => editCar(car)} style={{ marginLeft: '10px', color: 'blue' }}>Edit</button>
-              <button onClick={() => deleteCar(car.id)} style={{ marginLeft: '10px', color: 'red' }}>Delete</button>
-            </li>
+            <div key={car.id} className="car-card">
+              <img src={car.url} alt={`${car.make} ${car.model}`} className="car-image" />
+              <div className="car-details">
+                <h3>{car.make} {car.model}</h3>
+                <p>Type: {car.type}</p>
+                <p>Year: {car.year}</p>
+                <p>Kilometers: {car.km} km</p>
+                <p>Fuel: {car.fuel}</p>
+                <p>Price: {car.price}€</p>
+                <p>Date Added: {car.dateAdded}</p>
+              </div>
+              <div className="car-actions">
+                <button onClick={() => editCar(car)} className="edit-button">Edit</button>
+                <button onClick={() => deleteCar(car.id)} className="delete-button">Delete</button>
+              </div>
+            </div>
           ))
         ) : (
           <p>No cars available</p>
         )}
-      </ul>
+      </div>
     </div>
   );
 }

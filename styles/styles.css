@@ -1,0 +1,60 @@
+.car-list {
+    display: flex;
+    flex-direction:column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .car-card {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .car-image {
+    width: 150px;
+    height: auto;
+    border-radius: 8px;
+    margin-right: 20px;
+  }
+  
+  .car-details {
+    flex-grow: 1;
+  }
+  
+  .car-details h3 {
+    margin: 0 0 10px;
+  }
+  
+  .car-details p {
+    margin: 5px 0;
+  }
+  
+  .car-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .edit-button, .delete-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .delete-button {
+    background-color: #dc3545;
+  }
+  
+  .edit-button:hover, .delete-button:hover {
+    opacity: 0.8;
+  }
