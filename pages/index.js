@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import carsData from '../data/cars';
+import carsData, { validMakes, validModels, validTypes, validFuels } from '../data/cars';
 
 export default function Home() {
   const [cars, setCars] = useState(carsData);
@@ -22,9 +22,61 @@ export default function Home() {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
+  const validateCar = (car) => {
+
+    if (!car.make || !validMakes.includes(car.make)) {
+      return `Make must be one of the following: ${validMakes.join(', ')}`;
+    }
+
+    if (!car.model || !validModels.includes(car.model)) {
+      return `Model must be one of the following: ${validModels.join(', ')}`;
+    }
+
+    if (!car.type || !validTypes.includes(car.type)) {
+      return `Type must be one of the following: ${validTypes.join(', ')}`;
+    }
+
+    if (!car.fuel || !validFuels.includes(car.fuel)) {
+      return `Fuel must be one of the following: ${validFuels.join(', ')}`;
+    }
+
+
+    // Check if required fields are filled
+    if (!car.make || !car.model || !car.type || !car.fuel) {
+      return 'Make, Model, Type, and Fuel are required.';
+    }
+  
+    // Validate year
+    const currentYear = new Date().getFullYear();
+
+    if (!car.year || car.year < 1900 || car.year > currentYear) {
+      return 'Year should be a valid number between 1900 and the current year.';
+    }
+  
+    // Validate kilometers (km)
+    if (!car.km || car.km < 0) {
+      return 'Kilometers should be a non-negative number.';
+    }
+  
+    // Validate price
+    if (!car.price || car.price <= 0) {
+      return 'Price should be a positive number.';
+    }
+  
+    return ''; // No errors
+  };
+
   const addCar = () => {
-    if (!newCar.make || !newCar.model || !newCar.type || !newCar.year || !newCar.km || !newCar.fuel || !newCar.price || !newCar.dateAdded) {
+    /*
+    if (!newCar.make || !newCar.model || !newCar.type || !newCar.year || !newCar.km || !newCar.fuel || !newCar.price) {
       alert('All fields are required');
+      return;
+    }
+      */
+
+    const validationError = validateCar(newCar);
+    if (validationError) {
+      alert(validationError); // Show error message if validation fails
       return;
     }
 
@@ -34,7 +86,8 @@ export default function Home() {
       setEditingCar(null); // Exit edit mode
     } else {
       // Add new car
-      const newCarEntry = { ...newCar, id: cars.length + 1, year: Number(newCar.year), price: Number(newCar.price) };
+      const currentDate = new Date().toISOString().split('T')[0];;
+      const newCarEntry = { ...newCar, id: cars.length + 1, year: Number(newCar.year), price: Number(newCar.price), dateAdded: currentDate };
       setCars([...cars, newCarEntry]);
     }
 
@@ -147,7 +200,6 @@ export default function Home() {
         <input type="number" name="km" placeholder="Km" value={newCar.km} onChange={handleInputChange} />
         <input type="text" name="fuel" placeholder="Fuel Type" value={newCar.fuel} onChange={handleInputChange} />
         <input type="number" name="price" placeholder="Price" value={newCar.price} onChange={handleInputChange} />
-        <input type="string" name="dateAdded" placeholder="Date" value={newCar.dateAdded} onChange={handleInputChange} />
         <div className="button-container">
           <button onClick={addCar}>{editingCar ? 'Update Car' : 'Add Car'}</button>
         </div>
@@ -160,7 +212,7 @@ export default function Home() {
         {filteredCars.length > 0 ? (
           filteredCars.map((car) => (
             <li key={car.id}>
-              {car.make} {car.model}, {car.type}, {car.year}, {car.km} km, {car.fuel} - {car.price}€
+              {car.make} {car.model}, {car.type}, {car.year}, {car.km} km, {car.fuel} - {car.price}€, {car.dateAdded}
               <button onClick={() => editCar(car)} style={{ marginLeft: '10px', color: 'blue' }}>Edit</button>
               <button onClick={() => deleteCar(car.id)} style={{ marginLeft: '10px', color: 'red' }}>Delete</button>
             </li>
