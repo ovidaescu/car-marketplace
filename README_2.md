@@ -25,7 +25,7 @@ Welcome to the Car Marketplace project! This project is a web application that a
 - HTML
 - CSS
 
-## Installation and openning
+## Installation 
 
 To get a local copy up and running, follow these steps:
 
