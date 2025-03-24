@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import carsData, { validMakes, validModels, validTypes, validFuels } from '../data/cars';
 
 export default function Home() {
   const [cars, setCars] = useState(carsData);
-  const [newCar, setNewCar] = useState({ url: '',make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' , dateAdded: ''});
+  const [newCar, setNewCar] = useState({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
   const [editingCar, setEditingCar] = useState(null); // Track the car being edited
   const [sortOption, setSortOption] = useState(''); // Define state for sorting option
   const [filters, setFilters] = useState({
@@ -12,7 +12,15 @@ export default function Home() {
     year: '',
     fuel: '',
   });
+  const [statistics, setStatistics] = useState({ maxPrice: 0, minPrice: 0, avgPrice: 0 });
 
+  useEffect(() => {
+    if (cars.length > 0) {
+      const { maxPrice, minPrice, avgPrice } = calculateStatistics(cars);
+      setStatistics({ maxPrice, minPrice, avgPrice });
+    }
+  }, [cars]);
+  
 
   const handleInputChange = (e) => {
     setNewCar({ ...newCar, [e.target.name]: e.target.value });
@@ -23,8 +31,7 @@ export default function Home() {
   };
 
   const validateCar = (car) => {
-
-    if (!car.url){
+    if (!car.url) {
       return 'URL field should not be empty';
     }
 
@@ -44,60 +51,58 @@ export default function Home() {
       return `Fuel must be one of the following: ${validFuels.join(', ')}`;
     }
 
-
     // Check if required fields are filled
     if (!car.make || !car.model || !car.type || !car.fuel) {
       return 'Make, Model, Type, and Fuel are required.';
     }
-  
+
     // Validate year
     const currentYear = new Date().getFullYear();
 
     if (!car.year || car.year < 1900 || car.year > currentYear) {
       return 'Year should be a valid number between 1900 and the current year.';
     }
-  
+
     // Validate kilometers (km)
     if (!car.km || car.km < 0) {
       return 'Kilometers should be a non-negative number.';
     }
-  
+
     // Validate price
     if (!car.price || car.price <= 0) {
       return 'Price should be a positive number.';
     }
-  
+
     return ''; // No errors
   };
 
   const addCar = () => {
-    /*
-    if (!newCar.make || !newCar.model || !newCar.type || !newCar.year || !newCar.km || !newCar.fuel || !newCar.price) {
-      alert('All fields are required');
-      return;
-    }
-      */
-
     const validationError = validateCar(newCar);
     if (validationError) {
-      alert(validationError); // Show error message if validation fails
+      alert(validationError);
       return;
     }
-
+  
+    let updatedCars;
     if (editingCar) {
       // Update existing car
-      setCars(cars.map(car => (car.id === editingCar.id ? { ...newCar, id: editingCar.id } : car)));
-      setEditingCar(null); // Exit edit mode
+      updatedCars = cars.map(car => (car.id === editingCar.id ? { ...newCar, id: editingCar.id } : car));
+      setEditingCar(null);
     } else {
       // Add new car
-      const currentDate = new Date().toISOString().split('T')[0];;
+      const currentDate = new Date().toISOString().split('T')[0];
       const newCarEntry = { ...newCar, id: cars.length + 1, year: Number(newCar.year), price: Number(newCar.price), dateAdded: currentDate };
-      setCars([...cars, newCarEntry]);
+      updatedCars = [...cars, newCarEntry];
     }
-
-    setNewCar({ url: '',make: '', model: '', type: '', year: '', km: '', fuel: '', price: '' ,dateAdded: ''}); // Reset form
+  
+    // Calculate statistics BEFORE updating state
+    const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
+  
+    setCars(updatedCars);
+    setStatistics({ maxPrice, minPrice, avgPrice }); // Ensure stats update with new data
+    setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
   };
-
+  
 
   const handleSortChange = (e) => {
     const option = e.target.value;
@@ -127,7 +132,12 @@ export default function Home() {
   };
 
   const deleteCar = (id) => {
-    setCars(cars.filter(car => car.id !== id));
+    const updatedCars = cars.filter(car => car.id !== id);
+    setCars(updatedCars);
+
+    // Recalculate statistics
+    const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
+    setStatistics({ maxPrice, minPrice, avgPrice });
   };
 
   const editCar = (car) => {
@@ -144,13 +154,31 @@ export default function Home() {
     );
   });
 
+  const calculateStatistics = (cars) => {
+    if (cars.length === 0) return { maxPrice: 0, minPrice: 0, avgPrice: 0 };
+  
+    const prices = cars.map(car => Number(car.price)); // Ensure price is a number
+    const maxPrice = Math.max(...prices);
+    const minPrice = Math.min(...prices);
+    const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+  
+    return { maxPrice, minPrice, avgPrice };
+  };
+  
+  const getHighlightClass = (price) => {
+    if (price === statistics.maxPrice) return 'highlight-max';
+    if (price === statistics.minPrice) return 'highlight-min';
+    if (Math.abs(price - statistics.avgPrice) < 1) return 'highlight-avg'; // Handle rounding errors
+    return '';
+  };
+  
+
   return (
     <div>
       <h1>Welcome to the Car Marketplace</h1>
 
-
-       {/* Sorting Dropdown */}
-       <select value={sortOption} onChange={handleSortChange}>
+      {/* Sorting Dropdown */}
+      <select value={sortOption} onChange={handleSortChange}>
         <option value="">Sort By</option>
         <option value="newest-first">Date Added (Newest First)</option>
         <option value="oldest-first">Date Added (Oldest First)</option>
@@ -162,8 +190,8 @@ export default function Home() {
         <option value="km-high-low">Kilometers (High to Low)</option>
       </select>
 
-       {/* Filter Inputs */}
-       <div className="filter-container">
+      {/* Filter Inputs */}
+      <div className="filter-container">
         <input
           type="text"
           name="make"
@@ -194,7 +222,6 @@ export default function Home() {
         />
       </div>
 
-
       {/* Form to Add or Edit Car */}
       <div className="form-container">
         <input type="text" name="url" placeholder="URL" value={newCar.url} onChange={handleInputChange} />
@@ -218,7 +245,7 @@ export default function Home() {
       <div className="car-list">
         {filteredCars.length > 0 ? (
           filteredCars.map((car) => (
-            <div key={car.id} className="car-card">
+            <div key={car.id} className={`car-card ${getHighlightClass(car.price)}`}>
               <img src={car.url} alt={`${car.make} ${car.model}`} className="car-image" />
               <div className="car-details">
                 <h3>{car.make} {car.model}</h3>

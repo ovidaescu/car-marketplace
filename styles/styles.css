@@ -58,3 +58,15 @@
   .edit-button:hover, .delete-button:hover {
     opacity: 0.8;
   }
+
+  .highlight-max {
+    background-color: #ffcccc; /* Light red for the most expensive car */
+  }
+  
+  .highlight-min {
+    background-color: #ccffcc; /* Light green for the least expensive car */
+  }
+  
+  .highlight-avg {
+    background-color: #ffffcc; /* Light blue for the average priced car */
+  }
