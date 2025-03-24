@@ -31,14 +31,13 @@ export default function Home() {
       },
     ],
   });
-
   const [chartDataPie, setChartDataPie] = useState({
     labels: [],
     datasets: [
       {
         label: 'Car Prices',
         data: [],
-        borderColor: 'rgba(54,162,235,1)',
+        borderColor: 'black', // Set the border color to black
         backgroundColor: [
           'rgba(54,162,235,0.2)',
           'rgba(255,206,86,0.2)',
@@ -50,6 +49,8 @@ export default function Home() {
     ],
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const carsPerPage = 3;
 
   useEffect(() => {
     if (cars.length > 0) {
@@ -60,8 +61,8 @@ export default function Home() {
   }, [cars]);
 
   const updateChartData = (cars) => {
-    if (!cars || cars.length === 0) return; // Added check to ensure cars array is defined and not empty
-  
+    if (!cars || cars.length === 0) return;
+
     const prices = cars.map(car => car.price);
     const labels = cars.map(car => car.make + ' ' + car.model);
     setChartDataLine({
@@ -218,6 +219,16 @@ export default function Home() {
     return '';
   };
 
+  // Pagination logic
+  const indexOfLastCar = currentPage * carsPerPage;
+  const indexOfFirstCar = indexOfLastCar - carsPerPage;
+  const currentCars = filteredCars.slice(indexOfFirstCar, indexOfLastCar);
+  const totalPages = Math.ceil(filteredCars.length / carsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   return (
     <div>
       <h1>Welcome to the Car Marketplace</h1>
@@ -288,8 +299,8 @@ export default function Home() {
 
       {/* Display Filtered Cars */}
       <div className="car-list">
-        {filteredCars.length > 0 ? (
-          filteredCars.map((car) => (
+        {currentCars.length > 0 ? (
+          currentCars.map((car) => (
             <div key={car.id} className={`car-card ${getHighlightClass(car.price)}`}>
               <img src={car.url} alt={`${car.make} ${car.model}`} className="car-image" />
               <div className="car-details">
@@ -310,6 +321,19 @@ export default function Home() {
         ) : (
           <p>No cars available</p>
         )}
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="pagination">
+        {Array.from({ length: totalPages }, (_, index) => (
+          <button
+            key={index + 1}
+            onClick={() => handlePageChange(index + 1)}
+            className={currentPage === index + 1 ? 'active' : ''}
+          >
+            {index + 1}
+          </button>
+        ))}
       </div>
 
       {/* Charts */}
