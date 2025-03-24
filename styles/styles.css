@@ -70,3 +70,14 @@
   .highlight-avg {
     background-color: #ffffcc; /* Light blue for the average priced car */
   }
+
+
+  .chart-container {
+    width: 80%; /* Adjust the width as needed */
+    height: 300px; /* Adjust the height as needed */
+    margin: 100px auto; /* Center the chart container */
+  }
+
+  .chart-spacing{
+    margin-bottom: 20px;
+  }

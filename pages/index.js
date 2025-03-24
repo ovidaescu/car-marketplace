@@ -1,26 +1,109 @@
 import { useState, useEffect } from 'react';
 import carsData, { validMakes, validModels, validTypes, validFuels } from '../data/cars';
+import ChartComponent from '../components/ChartComponent';
 
 export default function Home() {
   const [cars, setCars] = useState(carsData);
   const [newCar, setNewCar] = useState({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
-  const [editingCar, setEditingCar] = useState(null); // Track the car being edited
-  const [sortOption, setSortOption] = useState(''); // Define state for sorting option
-  const [filters, setFilters] = useState({
-    make: '',
-    model: '',
-    year: '',
-    fuel: '',
-  });
+  const [editingCar, setEditingCar] = useState(null);
+  const [sortOption, setSortOption] = useState('');
+  const [filters, setFilters] = useState({ make: '', model: '', year: '', fuel: '' });
   const [statistics, setStatistics] = useState({ maxPrice: 0, minPrice: 0, avgPrice: 0 });
+  const [chartDataLine, setChartDataLine] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Car Prices',
+        data: [],
+        borderColor: 'rgba(75,192,192,1)',
+        backgroundColor: 'rgba(75,192,192,0.2)',
+      },
+    ],
+  });
+  const [chartDataBar, setChartDataBar] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Car Prices',
+        data: [],
+        borderColor: 'rgba(255,99,132,1)',
+        backgroundColor: 'rgba(255,99,132,0.2)',
+      },
+    ],
+  });
+
+  const [chartDataPie, setChartDataPie] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Car Prices',
+        data: [],
+        borderColor: 'rgba(54,162,235,1)',
+        backgroundColor: [
+          'rgba(54,162,235,0.2)',
+          'rgba(255,206,86,0.2)',
+          'rgba(75,192,192,0.2)',
+          'rgba(153,102,255,0.2)',
+          'rgba(255,159,64,0.2)',
+        ],
+      },
+    ],
+  });
+
 
   useEffect(() => {
     if (cars.length > 0) {
       const { maxPrice, minPrice, avgPrice } = calculateStatistics(cars);
       setStatistics({ maxPrice, minPrice, avgPrice });
+      updateChartData(cars);
     }
   }, [cars]);
+
+  const updateChartData = (cars) => {
+    if (!cars || cars.length === 0) return; // Added check to ensure cars array is defined and not empty
   
+    const prices = cars.map(car => car.price);
+    const labels = cars.map(car => car.make + ' ' + car.model);
+    setChartDataLine({
+      labels,
+      datasets: [
+        {
+          label: 'Car Prices',
+          data: prices,
+          borderColor: 'rgba(75,192,192,1)',
+          backgroundColor: 'rgba(75,192,192,0.2)',
+        },
+      ],
+    });
+    setChartDataBar({
+      labels,
+      datasets: [
+        {
+          label: 'Car Prices',
+          data: prices,
+          borderColor: 'rgba(255,99,132,1)',
+          backgroundColor: 'rgba(255,99,132,0.2)',
+        },
+      ],
+    });
+    setChartDataPie({
+      labels,
+      datasets: [
+        {
+          label: 'Car Prices',
+          data: prices,
+          borderColor: 'black', // Set the border color to black
+          backgroundColor: [
+            'rgba(54,162,235,0.2)',
+            'rgba(255,206,86,0.2)',
+            'rgba(75,192,192,0.2)',
+            'rgba(153,102,255,0.2)',
+            'rgba(255,159,64,0.2)',
+          ],
+        },
+      ],
+    });
+  };
 
   const handleInputChange = (e) => {
     setNewCar({ ...newCar, [e.target.name]: e.target.value });
@@ -31,49 +114,17 @@ export default function Home() {
   };
 
   const validateCar = (car) => {
-    if (!car.url) {
-      return 'URL field should not be empty';
-    }
-
-    if (!car.make || !validMakes.includes(car.make)) {
-      return `Make must be one of the following: ${validMakes.join(', ')}`;
-    }
-
-    if (!car.model || !validModels.includes(car.model)) {
-      return `Model must be one of the following: ${validModels.join(', ')}`;
-    }
-
-    if (!car.type || !validTypes.includes(car.type)) {
-      return `Type must be one of the following: ${validTypes.join(', ')}`;
-    }
-
-    if (!car.fuel || !validFuels.includes(car.fuel)) {
-      return `Fuel must be one of the following: ${validFuels.join(', ')}`;
-    }
-
-    // Check if required fields are filled
-    if (!car.make || !car.model || !car.type || !car.fuel) {
-      return 'Make, Model, Type, and Fuel are required.';
-    }
-
-    // Validate year
+    if (!car.url) return 'URL field should not be empty';
+    if (!car.make || !validMakes.includes(car.make)) return `Make must be one of the following: ${validMakes.join(', ')}`;
+    if (!car.model || !validModels.includes(car.model)) return `Model must be one of the following: ${validModels.join(', ')}`;
+    if (!car.type || !validTypes.includes(car.type)) return `Type must be one of the following: ${validTypes.join(', ')}`;
+    if (!car.fuel || !validFuels.includes(car.fuel)) return `Fuel must be one of the following: ${validFuels.join(', ')}`;
+    if (!car.make || !car.model || !car.type || !car.fuel) return 'Make, Model, Type, and Fuel are required.';
     const currentYear = new Date().getFullYear();
-
-    if (!car.year || car.year < 1900 || car.year > currentYear) {
-      return 'Year should be a valid number between 1900 and the current year.';
-    }
-
-    // Validate kilometers (km)
-    if (!car.km || car.km < 0) {
-      return 'Kilometers should be a non-negative number.';
-    }
-
-    // Validate price
-    if (!car.price || car.price <= 0) {
-      return 'Price should be a positive number.';
-    }
-
-    return ''; // No errors
+    if (!car.year || car.year < 1900 || car.year > currentYear) return 'Year should be a valid number between 1900 and the current year.';
+    if (!car.km || car.km < 0) return 'Kilometers should be a non-negative number.';
+    if (!car.price || car.price <= 0) return 'Price should be a positive number.';
+    return '';
   };
 
   const addCar = () => {
@@ -82,27 +133,23 @@ export default function Home() {
       alert(validationError);
       return;
     }
-  
+
     let updatedCars;
     if (editingCar) {
-      // Update existing car
       updatedCars = cars.map(car => (car.id === editingCar.id ? { ...newCar, id: editingCar.id } : car));
       setEditingCar(null);
     } else {
-      // Add new car
       const currentDate = new Date().toISOString().split('T')[0];
       const newCarEntry = { ...newCar, id: cars.length + 1, year: Number(newCar.year), price: Number(newCar.price), dateAdded: currentDate };
       updatedCars = [...cars, newCarEntry];
     }
-  
-    // Calculate statistics BEFORE updating state
-    const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
-  
+
     setCars(updatedCars);
-    setStatistics({ maxPrice, minPrice, avgPrice }); // Ensure stats update with new data
     setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
+
+    const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
+    setStatistics({ maxPrice, minPrice, avgPrice });
   };
-  
 
   const handleSortChange = (e) => {
     const option = e.target.value;
@@ -135,14 +182,13 @@ export default function Home() {
     const updatedCars = cars.filter(car => car.id !== id);
     setCars(updatedCars);
 
-    // Recalculate statistics
     const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
     setStatistics({ maxPrice, minPrice, avgPrice });
   };
 
   const editCar = (car) => {
-    setNewCar(car); // Prefill the form
-    setEditingCar(car); // Set the car being edited
+    setNewCar(car);
+    setEditingCar(car);
   };
 
   const filteredCars = cars.filter(car => {
@@ -156,22 +202,21 @@ export default function Home() {
 
   const calculateStatistics = (cars) => {
     if (cars.length === 0) return { maxPrice: 0, minPrice: 0, avgPrice: 0 };
-  
-    const prices = cars.map(car => Number(car.price)); // Ensure price is a number
+
+    const prices = cars.map(car => Number(car.price));
     const maxPrice = Math.max(...prices);
     const minPrice = Math.min(...prices);
     const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
-  
+
     return { maxPrice, minPrice, avgPrice };
   };
-  
+
   const getHighlightClass = (price) => {
     if (price === statistics.maxPrice) return 'highlight-max';
     if (price === statistics.minPrice) return 'highlight-min';
-    if (Math.abs(price - statistics.avgPrice) < 1) return 'highlight-avg'; // Handle rounding errors
+    if (Math.abs(price - statistics.avgPrice) < 1) return 'highlight-avg';
     return '';
   };
-  
 
   return (
     <div>
@@ -265,6 +310,13 @@ export default function Home() {
         ) : (
           <p>No cars available</p>
         )}
+      </div>
+
+      {/* Charts */}
+      <div className="chart-container">
+        <ChartComponent type="line" data={chartDataLine} options={{ responsive: true, maintainAspectRatio: false }} />
+        <ChartComponent type="bar" data={chartDataBar} options={{ responsive: true, maintainAspectRatio: false }} />
+        <ChartComponent type="pie" data={chartDataPie} options={{ responsive: true, maintainAspectRatio: false }} />
       </div>
     </div>
   );
