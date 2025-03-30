@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React,{ useState, useEffect } from 'react';
 import carsData, { validMakes, validModels, validTypes, validFuels } from '../data/cars';
 import ChartComponent from '../components/ChartComponent';
 
