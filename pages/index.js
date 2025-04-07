@@ -1,9 +1,14 @@
-import React,{ useState, useEffect } from 'react';
-import carsData, { validMakes, validModels, validTypes, validFuels } from '../data/cars';
+import React, { useState, useEffect } from 'react';
+import SortingDropdown from '../components/SortingDropdown';
+import FilterInputs from '../components/FilterInputs';
+import CarForm from '../components/CarForm';
+import CarList from '../components/CarList';
+import Pagination from '../components/Pagination';
 import ChartComponent from '../components/ChartComponent';
+import { saveOperationLocally, getPendingOperations, clearPendingOperations } from '../utils/localstorage';
 
 export default function Home() {
-  const [cars, setCars] = useState(carsData);
+  const [cars, setCars] = useState([]);
   const [newCar, setNewCar] = useState({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
   const [editingCar, setEditingCar] = useState(null);
   const [sortOption, setSortOption] = useState('');
@@ -37,7 +42,7 @@ export default function Home() {
       {
         label: 'Car Prices',
         data: [],
-        borderColor: 'black', // Set the border color to black
+        borderColor: 'black',
         backgroundColor: [
           'rgba(54,162,235,0.2)',
           'rgba(255,206,86,0.2)',
@@ -49,8 +54,92 @@ export default function Home() {
     ],
   });
 
+  const [isOffline, setIsOffline] = useState(false);
+  const [isServerDown, setIsServerDown] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+  const [ws, setWs] = useState(null);
+
+  const syncWithServer = async () => {
+    const pendingOperations = getPendingOperations();
+
+    for (const operation of pendingOperations) {
+      try {
+        await fetch(operation.url, {
+          method: operation.method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(operation.body),
+        });
+      } catch (error) {
+        console.error('Failed to sync operation:', operation);
+      }
+    }
+
+    clearPendingOperations();
+  };
+
+  useEffect(() => {
+    if (!isOffline && !isServerDown) {
+      syncWithServer();
+    }
+  }, [isOffline, isServerDown]);
+
+  useEffect(() => {
+    setHasMounted(true);
+    setIsOffline(!navigator.onLine);
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted) return;
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [hasMounted]);
+
+  useEffect(() => {
+    if (!hasMounted || isOffline) return;
+
+    const checkServerStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/cars');
+        if (!response.ok) throw new Error('Server is down');
+        setIsServerDown(false);
+      } catch (error) {
+        setIsServerDown(true);
+      }
+    };
+
+    checkServerStatus();
+    const interval = setInterval(checkServerStatus, 10000);
+    return () => clearInterval(interval);
+  }, [hasMounted, isOffline]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const carsPerPage = 3;
+
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        const queryParams = new URLSearchParams(filters);
+        if (sortOption) queryParams.append('sortBy', sortOption);
+
+        const response = await fetch(`http://localhost:3000/api/cars?${queryParams.toString()}`);
+        const data = await response.json();
+        setCars(data);
+      } catch (error) {
+        console.error('Error fetching cars:', error);
+      }
+    };
+
+    fetchCars();
+  }, [filters, sortOption]);
 
   useEffect(() => {
     if (cars.length > 0) {
@@ -63,8 +152,8 @@ export default function Home() {
   const updateChartData = (cars) => {
     if (!cars || cars.length === 0) return;
 
-    const prices = cars.map(car => car.price);
-    const labels = cars.map(car => car.make + ' ' + car.model);
+    const prices = cars.map((car) => car.price);
+    const labels = cars.map((car) => car.make + ' ' + car.model);
     setChartDataLine({
       labels,
       datasets: [
@@ -93,7 +182,7 @@ export default function Home() {
         {
           label: 'Car Prices',
           data: prices,
-          borderColor: 'black', // Set the border color to black
+          borderColor: 'black',
           backgroundColor: [
             'rgba(54,162,235,0.2)',
             'rgba(255,206,86,0.2)',
@@ -106,105 +195,145 @@ export default function Home() {
     });
   };
 
-  const handleInputChange = (e) => {
-    setNewCar({ ...newCar, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    const socket = new WebSocket('ws://localhost:8080');
+    setWs(socket);
 
-  const handleFilterChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
-  };
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
 
-  const validateCar = (car) => {
-    if (!car.url) return 'URL field should not be empty';
-    if (!car.make || !validMakes.includes(car.make)) return `Make must be one of the following: ${validMakes.join(', ')}`;
-    if (!car.model || !validModels.includes(car.model)) return `Model must be one of the following: ${validModels.join(', ')}`;
-    if (!car.type || !validTypes.includes(car.type)) return `Type must be one of the following: ${validTypes.join(', ')}`;
-    if (!car.fuel || !validFuels.includes(car.fuel)) return `Fuel must be one of the following: ${validFuels.join(', ')}`;
-    if (!car.make || !car.model || !car.type || !car.fuel) return 'Make, Model, Type, and Fuel are required.';
-    const currentYear = new Date().getFullYear();
-    if (!car.year || car.year < 1900 || car.year > currentYear) return 'Year should be a valid number between 1900 and the current year.';
-    if (!car.km || car.km < 0) return 'Kilometers should be a non-negative number.';
-    if (!car.price || car.price <= 0) return 'Price should be a positive number.';
-    return '';
-  };
+      switch (message.type) {
+        case 'INIT':
+          setCars(message.cars);
+          break;
 
-  const addCar = () => {
-    const validationError = validateCar(newCar);
-    if (validationError) {
-      alert(validationError);
+        case 'ADD_CAR':
+          setCars((prevCars) => [...prevCars, message.car]);
+          break;
+
+        case 'DELETE_CAR':
+          setCars((prevCars) => prevCars.filter((car) => car.id !== message.id));
+          break;
+
+        case 'EDIT_CAR':
+          setCars((prevCars) =>
+            prevCars.map((car) => (car.id === message.car.id ? message.car : car))
+          );
+          break;
+
+        default:
+          console.error('Unknown message type:', message.type);
+      }
+    };
+
+    socket.onopen = () => console.log('Connected to WebSocket server');
+    socket.onclose = () => console.log('Disconnected from WebSocket server');
+
+    return () => socket.close();
+  }, []);
+
+  const handleInputChange = (e) => setNewCar({ ...newCar, [e.target.name]: e.target.value });
+  const handleFilterChange = (e) => setFilters({ ...filters, [e.target.name]: e.target.value });
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  const addCar = async () => {
+    const operation = {
+      method: editingCar ? 'PATCH' : 'POST',
+      url: editingCar
+        ? `http://localhost:3000/api/cars?id=${editingCar.id}`
+        : 'http://localhost:3000/api/cars',
+      body: newCar,
+    };
+
+    if (isOffline || isServerDown) {
+      saveOperationLocally(operation);
+
+      setCars((prevCars) =>
+        editingCar
+          ? prevCars.map((car) => (car.id === editingCar.id ? { ...car, ...newCar } : car))
+          : [...prevCars, { ...newCar, id: Date.now() }]
+      );
+
+      setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
+      setEditingCar(null);
       return;
     }
 
-    let updatedCars;
-    if (editingCar) {
-      updatedCars = cars.map(car => (car.id === editingCar.id ? { ...newCar, id: editingCar.id } : car));
+    try {
+      const response = await fetch(operation.url, {
+        method: operation.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(operation.body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to save car');
+        return;
+      }
+
+      const savedCar = await response.json();
+      setCars((prevCars) =>
+        editingCar
+          ? prevCars.map((car) => (car.id === savedCar.id ? savedCar : car))
+          : [...prevCars, savedCar]
+      );
+
+      if (ws) {
+        ws.send(JSON.stringify({ type: 'ADD_CAR', car: savedCar }));
+      }
+
+      setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
       setEditingCar(null);
-    } else {
-      const currentDate = new Date().toISOString().split('T')[0];
-      const newCarEntry = { ...newCar, id: cars.length + 1, year: Number(newCar.year), price: Number(newCar.price), dateAdded: currentDate };
-      updatedCars = [...cars, newCarEntry];
+    } catch (error) {
+      console.error('Error saving car:', error);
     }
-
-    setCars(updatedCars);
-    setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
-
-    const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
-    setStatistics({ maxPrice, minPrice, avgPrice });
   };
 
-  const handleSortChange = (e) => {
-    const option = e.target.value;
-    setSortOption(option);
+  const deleteCar = async (id) => {
+    const operation = {
+      method: 'DELETE',
+      url: `http://localhost:3000/api/cars?id=${id}`,
+    };
 
-    let sortedCars = [...cars];
+    if (isOffline || isServerDown) {
+      saveOperationLocally(operation);
 
-    if (option === 'newest-first') {
-      sortedCars.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-    } else if (option === 'oldest-first') {
-      sortedCars.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
-    } else if (option === 'price-low-high') {
-      sortedCars.sort((a, b) => a.price - b.price);
-    } else if (option === 'price-high-low') {
-      sortedCars.sort((a, b) => b.price - a.price);
-    } else if (option === 'year-new-old') {
-      sortedCars.sort((a, b) => b.year - a.year);
-    } else if (option === 'year-old-new') {
-      sortedCars.sort((a, b) => a.year - b.year);
-    } else if (option === 'km-low-high') {
-      sortedCars.sort((a, b) => a.km - b.km);
-    } else if (option === 'km-high-low') {
-      sortedCars.sort((a, b) => b.km - a.km);
+      setCars((prevCars) => prevCars.filter((car) => car.id !== id));
+      return;
     }
 
-    setCars(sortedCars);
-  };
+    try {
+      const response = await fetch(operation.url, { method: operation.method });
 
-  const deleteCar = (id) => {
-    const updatedCars = cars.filter(car => car.id !== id);
-    setCars(updatedCars);
+      if (!response.ok) {
+        alert('Failed to delete car');
+        return;
+      }
 
-    const { maxPrice, minPrice, avgPrice } = calculateStatistics(updatedCars);
-    setStatistics({ maxPrice, minPrice, avgPrice });
+      setCars((prevCars) => prevCars.filter((car) => car.id !== id));
+
+      if (ws) {
+        ws.send(JSON.stringify({ type: 'DELETE_CAR', id }));
+      }
+    } catch (error) {
+      console.error('Error deleting car:', error);
+    }
   };
 
   const editCar = (car) => {
     setNewCar(car);
     setEditingCar(car);
-  };
 
-  const filteredCars = cars.filter(car => {
-    return (
-      (filters.make ? car.make.toLowerCase().includes(filters.make.toLowerCase()) : true) &&
-      (filters.model ? car.model.toLowerCase().includes(filters.model.toLowerCase()) : true) &&
-      (filters.year ? car.year === Number(filters.year) : true) &&
-      (filters.fuel ? car.fuel.toLowerCase().includes(filters.fuel.toLowerCase()) : true)
-    );
-  });
+    if (ws) {
+      ws.send(JSON.stringify({ type: 'EDIT_CAR', car }));
+    }
+  };
 
   const calculateStatistics = (cars) => {
     if (cars.length === 0) return { maxPrice: 0, minPrice: 0, avgPrice: 0 };
 
-    const prices = cars.map(car => Number(car.price));
+    const prices = cars.map((car) => Number(car.price));
     const maxPrice = Math.max(...prices);
     const minPrice = Math.min(...prices);
     const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
@@ -219,124 +348,21 @@ export default function Home() {
     return '';
   };
 
-  // Pagination logic
   const indexOfLastCar = currentPage * carsPerPage;
   const indexOfFirstCar = indexOfLastCar - carsPerPage;
-  const currentCars = filteredCars.slice(indexOfFirstCar, indexOfLastCar);
-  const totalPages = Math.ceil(filteredCars.length / carsPerPage);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  const currentCars = cars.slice(indexOfFirstCar, indexOfLastCar);
+  const totalPages = Math.ceil(cars.length / carsPerPage);
 
   return (
     <div>
       <h1>Welcome to the Car Marketplace</h1>
-
-      {/* Sorting Dropdown */}
-      <select value={sortOption} onChange={handleSortChange}>
-        <option value="">Sort By</option>
-        <option value="newest-first">Date Added (Newest First)</option>
-        <option value="oldest-first">Date Added (Oldest First)</option>
-        <option value="price-low-high">Price (Low to High)</option>
-        <option value="price-high-low">Price (High to Low)</option>
-        <option value="year-new-old">Year (Newest to Oldest)</option>
-        <option value="year-old-new">Year (Oldest to Newest)</option>
-        <option value="km-low-high">Kilometers (Low to High)</option>
-        <option value="km-high-low">Kilometers (High to Low)</option>
-      </select>
-
-      {/* Filter Inputs */}
-      <div className="filter-container">
-        <input
-          type="text"
-          name="make"
-          placeholder="Filter by Make"
-          value={filters.make}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="model"
-          placeholder="Filter by Model"
-          value={filters.model}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="number"
-          name="year"
-          placeholder="Filter by Year"
-          value={filters.year}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="fuel"
-          placeholder="Filter by Fuel Type"
-          value={filters.fuel}
-          onChange={handleFilterChange}
-        />
-      </div>
-
-      {/* Form to Add or Edit Car */}
-      <div className="form-container">
-        <input type="text" name="url" placeholder="URL" value={newCar.url} onChange={handleInputChange} />
-        <input type="text" name="make" placeholder="Make" value={newCar.make} onChange={handleInputChange} />
-        <input type="text" name="model" placeholder="Model" value={newCar.model} onChange={handleInputChange} />
-        <input type="text" name="type" placeholder="Type" value={newCar.type} onChange={handleInputChange} />
-        <input type="number" name="year" placeholder="Year" value={newCar.year} onChange={handleInputChange} />
-        <input type="number" name="km" placeholder="Km" value={newCar.km} onChange={handleInputChange} />
-        <input type="text" name="fuel" placeholder="Fuel Type" value={newCar.fuel} onChange={handleInputChange} />
-        <input type="number" name="price" placeholder="Price" value={newCar.price} onChange={handleInputChange} />
-        <div className="button-container">
-          <button onClick={addCar}>{editingCar ? 'Update Car' : 'Add Car'}</button>
-        </div>
-      </div>
-
-      <br />
-      <br />
-      <br />
-
-      {/* Display Filtered Cars */}
-      <div className="car-list">
-        {currentCars.length > 0 ? (
-          currentCars.map((car) => (
-            <div key={car.id} className={`car-card ${getHighlightClass(car.price)}`}>
-              <img src={car.url} alt={`${car.make} ${car.model}`} className="car-image" />
-              <div className="car-details">
-                <h3>{car.make} {car.model}</h3>
-                <p>Type: {car.type}</p>
-                <p>Year: {car.year}</p>
-                <p>Kilometers: {car.km} km</p>
-                <p>Fuel: {car.fuel}</p>
-                <p>Price: {car.price}€</p>
-                <p>Date Added: {car.dateAdded}</p>
-              </div>
-              <div className="car-actions">
-                <button onClick={() => editCar(car)} className="edit-button">Edit</button>
-                <button onClick={() => deleteCar(car.id)} className="delete-button">Delete</button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p>No cars available</p>
-        )}
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="pagination">
-        {Array.from({ length: totalPages }, (_, index) => (
-          <button
-            key={index + 1}
-            onClick={() => handlePageChange(index + 1)}
-            className={currentPage === index + 1 ? 'active' : ''}
-          >
-            {index + 1}
-          </button>
-        ))}
-      </div>
-
-      {/* Charts */}
+      {isOffline && <div className="alert alert-warning">You are offline. Changes will be saved locally.</div>}
+      {isServerDown && !isOffline && <div className="alert alert-danger">The server is down. Changes will sync when it's back online.</div>}
+      <SortingDropdown sortOption={sortOption} setSortOption={setSortOption} />
+      <FilterInputs filters={filters} handleFilterChange={handleFilterChange} />
+      <CarForm newCar={newCar} handleInputChange={handleInputChange} addCar={addCar} editingCar={editingCar} />
+      <CarList cars={currentCars} editCar={editCar} deleteCar={deleteCar} getHighlightClass={getHighlightClass} />
+      <Pagination totalPages={totalPages} currentPage={currentPage} handlePageChange={handlePageChange} />
       <div className="chart-container">
         <ChartComponent type="line" data={chartDataLine} options={{ responsive: true, maintainAspectRatio: false }} />
         <ChartComponent type="bar" data={chartDataBar} options={{ responsive: true, maintainAspectRatio: false }} />

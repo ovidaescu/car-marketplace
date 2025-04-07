@@ -1,4 +1,5 @@
 module.exports = {
+    //testTimeout: 10000,
     testEnvironment: 'jest-environment-jsdom',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     moduleNameMapper: {

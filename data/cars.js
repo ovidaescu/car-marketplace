@@ -3,7 +3,7 @@
 // Define valid sets
 export const validMakes = ['Toyota', 'Honda', 'Ford', 'BMW', 'Audi'];
 export const validModels = ['Corolla', 'Civic', 'Mustang', 'X5', 'A4'];
-export const validTypes = ['Hatchback', 'Sedan', 'Coupe', 'SUV', 'Convertible'];
+export const validTypes = ['Hatchback', 'Sedan', 'Coupe', 'SUV', 'Convertible','Break'];
 export const validFuels = ['Petrol', 'Diesel', 'Electric', 'Hybrid'];
 
 // Car data
