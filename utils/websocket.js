@@ -47,7 +47,12 @@ const startWebSocketServer = (port = 8080) => {
 
       switch (parsedMessage.type) {
         case 'ADD_CAR':
-          const newCar = { ...parsedMessage.car, id: uuidv4(), dateAdded: new Date().toISOString() };
+          // Use the provided car ID if it exists, otherwise generate a new one
+          const newCar = {
+            ...parsedMessage.car,
+            id: parsedMessage.car.id || uuidv4(),
+            dateAdded: new Date().toISOString(),
+          };
           cars.push(newCar);
           broadcast({ type: 'ADD_CAR', car: newCar });
           break;

@@ -1,52 +1,92 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import Home from '../pages/index.js';
 import React from 'react';
 
-// Example test to check if car is added successfully
-test('adds a car successfully', async () => {
-  render(<Home />);
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import Home from '../pages/index.js'; // Make sure to adjust the import path accordingly
 
-  // Make sure all the form fields are accessible
-  const makeInput = screen.getByPlaceholderText('Make');
-  const modelInput = screen.getByPlaceholderText('Model');
-  const yearInput = screen.getByPlaceholderText('Year');
-  const priceInput = screen.getByPlaceholderText('Price');
-  const addButton = screen.getByText(/Add Car/i);
+// Mock fetch to simulate API responses
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve([]),
+  })
+);
 
-  // Simulate user typing in the form
-  await userEvent.type(makeInput, 'Toyota');
-  await userEvent.type(modelInput, 'Corolla');
-  await userEvent.type(yearInput, '2022');
-  await userEvent.type(priceInput, '20000');
-  
-  // Click the add button
-  await userEvent.click(addButton);
+describe('Home Component', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+  });
 
-  // Ensure the car is added to the document
-  expect(screen.getByText('Toyota Corolla')).toBeInTheDocument();
-  expect(screen.getByText('2022')).toBeInTheDocument();
-  expect(screen.getByText('20000€')).toBeInTheDocument();
-});
+  test('renders the Home component correctly', () => {
+    render(<Home />);
+    expect(screen.getByText(/Welcome to the Car Marketplace/i)).toBeInTheDocument();
+  });
 
-// Example test to check if car can be deleted
-test('deletes a car successfully', async () => {
-  render(<Home />);
+  test('filters input changes correctly', () => {
+    render(<Home />);
+    const makeInput = screen.getByLabelText(/Make/i);
+    fireEvent.change(makeInput, { target: { value: 'Toyota' } });
 
-  // Add a car first
-  await userEvent.type(screen.getByPlaceholderText('Make'), 'Honda');
-  await userEvent.type(screen.getByPlaceholderText('Model'), 'Civic');
-  await userEvent.type(screen.getByPlaceholderText('Year'), '2021');
-  await userEvent.type(screen.getByPlaceholderText('Price'), '18000');
-  await userEvent.click(screen.getByText(/Add Car/i));
+    expect(makeInput.value).toBe('Toyota');
+  });
 
-  // Ensure car appears
-  expect(screen.getByText('Honda Civic')).toBeInTheDocument();
+  test('sort option changes correctly', async () => {
+    render(<Home />);
+    const sortingDropdown = screen.getByTestId('sorting-dropdown'); // Assuming you add a testID to the dropdown
+    fireEvent.change(sortingDropdown, { target: { value: 'price' } });
 
-  // Click the delete button
-  const deleteButton = screen.getByText(/Delete/i);
-  await userEvent.click(deleteButton);
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('sortBy=price')
+      );
+    });
+  });
 
-  // Ensure the car is removed from the document
-  expect(screen.queryByText('Honda Civic')).not.toBeInTheDocument();
+  test('add car form works correctly', async () => {
+    render(<Home />);
+    
+    const makeInput = screen.getByLabelText(/Make/i);
+    const modelInput = screen.getByLabelText(/Model/i);
+    const priceInput = screen.getByLabelText(/Price/i);
+    
+    fireEvent.change(makeInput, { target: { value: 'BMW' } });
+    fireEvent.change(modelInput, { target: { value: 'X5' } });
+    fireEvent.change(priceInput, { target: { value: '50000' } });
+
+    fireEvent.click(screen.getByText(/Save Car/i)); // Assuming a button exists with this text
+    
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('method: POST')
+      );
+    });
+  });
+
+  test('delete car functionality works', async () => {
+    render(<Home />);
+    // Assuming delete button exists and has a text 'Delete'
+    fireEvent.click(screen.getByText(/Delete/i));
+    
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE')
+      );
+    });
+  });
+
+  test('pagination works', () => {
+    render(<Home />);
+    
+    const nextPageButton = screen.getByText(/Next/i); // Assuming button text for pagination
+    fireEvent.click(nextPageButton);
+    
+    expect(screen.getByText(/Page 2/i)).toBeInTheDocument();
+  });
+
+  test('charts are rendered correctly', () => {
+    render(<Home />);
+    
+    // Check that the charts are rendered
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument(); // Assuming chart components have test IDs
+    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
+    expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
+  });
 });
