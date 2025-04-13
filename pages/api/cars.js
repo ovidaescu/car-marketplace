@@ -3,6 +3,8 @@ import carsData,{ validMakes, validModels, validTypes, validFuels } from '../../
 // In-memory storage for cars
 let cars = [...carsData];
 
+const { broadcastUpdate } = require('../../utils/start');
+
 
 export const resetCars = () => {
   cars = [...carsData]; // Reset the cars array to its initial state
@@ -90,6 +92,9 @@ export default function carsApiHandler(req, res) {
 
     const newCar = { ...req.body, id: cars.length + 1, dateAdded: new Date().toISOString().split('T')[0] };
     cars.push(newCar);
+
+    broadcastUpdate({ type: 'ADD_CAR', car: newCar });
+
     return res.status(201).json(newCar);
   }
 
@@ -107,14 +112,31 @@ export default function carsApiHandler(req, res) {
       ...req.body, 
       dateAdded: req.body.dateAdded || cars[carIndex].dateAdded // Keep existing date if not provided
     };
+
+    broadcastUpdate({ type: 'EDIT_CAR', car: cars[carIndex] });
+
+
     return res.status(200).json(cars[carIndex]);
   }
 
   if (req.method === 'DELETE') {
     const { id } = req.query;
-    cars = cars.filter(car => car.id !== Number(id));
+    const carId = Number(id);
+  
+    if (!cars.some((car) => car.id === carId)) {
+      return res.status(404).json({ error: 'Car not found' });
+    }
+  
+    // Remove the car from the in-memory array
+    cars = cars.filter((car) => car.id !== carId);
+  
+    // Broadcast the deleted car ID to all connected clients
+    broadcastUpdate({ type: 'DELETE_CAR', carId });
+  
     return res.status(200).json({ message: 'Car deleted successfully' });
   }
+
+
 
   return res.status(405).json({ error: 'Method Not Allowed' });
 }

@@ -53,6 +53,55 @@ export default function Home() {
     ],
   });
 
+
+  // if you don want to use the socket comment  this below and decomment the setCars in addCar and deleteCar function
+  // also comment the broadcast function in the backend
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8080');
+  
+    ws.onopen = () => {
+      console.log('Connected to WebSocket server');
+    };
+
+  
+    ws.onmessage = (event) => {
+      console.log('Message received:', event.data);
+
+      const message = JSON.parse(event.data);
+  
+      switch (message.type) {
+        case 'INIT':
+          setCars(message.cars);
+          break;
+        case 'ADD_CAR':
+          //setCars((prevCars) => [...prevCars, message.car]);
+          setCars((prevCars) => {
+            return prevCars.some((car) => car.id === message.car.id)
+              ? prevCars.map((car) => (car.id === message.car.id ? message.car : car)) // Update existing car
+              : [...prevCars, message.car]; // Add new car
+          });
+          case 'DELETE_CAR':
+            setCars((prevCars) => prevCars.filter((car) => car.id !== message.carId));
+            break;
+          case 'EDIT_CAR':
+            setCars((prevCars) =>
+              prevCars.map((car) => (car.id === message.car.id ? message.car : car))
+            );
+            break;
+        default:
+          console.error('Unknown message type:', message.type);
+      }
+    };
+  
+    ws.onclose = () => {
+      console.log('Disconnected from WebSocket server');
+    };
+  
+    return () => {
+      ws.close();
+    };
+  }, []);
+
   const [currentPage, setCurrentPage] = useState(1);
   const carsPerPage = 3;
 
@@ -168,11 +217,15 @@ export default function Home() {
       const savedCar = await response.json();
       console.log('Saved car:', savedCar); // Debugging log
   
+
+      // Do not update state here; rely on WebSocket message
+      /*
       setCars((prevCars) => {
         return editingCar
           ? prevCars.map((car) => (car.id === savedCar.id ? savedCar : car))
           : [...prevCars, savedCar];
       });
+      */
   
       setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
       setEditingCar(null);
@@ -199,7 +252,10 @@ export default function Home() {
         return updatedCars;
       });
       */
-      setCars((prevCars) => prevCars.filter((car) => car.id !== id));
+
+
+      // Do not update state here; rely on WebSocket message
+      //setCars((prevCars) => prevCars.filter((car) => car.id !== id));
 
     } catch (error) {
       console.error('Error deleting car:', error);
