@@ -57,7 +57,7 @@ export default function Home() {
   // if you don want to use the socket comment  this below and decomment the setCars in addCar and deleteCar function
   // also comment the broadcast function in the backend
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080');
+    const ws = new WebSocket('ws://localhost:8081');
   
     ws.onopen = () => {
       console.log('Connected to WebSocket server');
@@ -80,16 +80,17 @@ export default function Home() {
               ? prevCars.map((car) => (car.id === message.car.id ? message.car : car)) // Update existing car
               : [...prevCars, message.car]; // Add new car
           });
-          case 'DELETE_CAR':
-            setCars((prevCars) => prevCars.filter((car) => car.id !== message.carId));
-            break;
-          case 'EDIT_CAR':
-            setCars((prevCars) =>
-              prevCars.map((car) => (car.id === message.car.id ? message.car : car))
-            );
-            break;
-        default:
-          console.error('Unknown message type:', message.type);
+          break;
+        case 'DELETE_CAR':
+          setCars((prevCars) => prevCars.filter((car) => car.id !== message.carId));
+          break;
+        case 'EDIT_CAR':
+          setCars((prevCars) =>
+            prevCars.map((car) => (car.id === message.car.id ? message.car : car))
+          );
+          break;
+      default:
+        console.error('Unknown message type:', message.type);
       }
     };
   
@@ -139,7 +140,7 @@ export default function Home() {
     if (!cars || cars.length === 0) return;
 
     const prices = cars.map((car) => car.price);
-    const labels = cars.map((car) => car.make + ' ' + car.model);
+    const labels = (cars || []).map((car) => car.make + ' ' + car.model);
     setChartDataLine({
       labels,
       datasets: [

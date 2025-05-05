@@ -1,17 +1,12 @@
-import carsData,{ validMakes, validModels, validTypes, validFuels } from '../../data/cars'; // Import valid data
+import db from '../../models';
+const { Car } = db;
+import { validMakes, validModels, validTypes, validFuels } from '../../data/carsData'; // Import valid data
 
-// In-memory storage for cars
-let cars = [...carsData];
+console.log('Car model:', Car);
 
 const { broadcastUpdate } = require('../../utils/start');
 
-
-export const resetCars = () => {
-  cars = [...carsData]; // Reset the cars array to its initial state
-};
-export { cars };
-
-// server side validation
+// Server-side validation
 const validateCar = (car) => {
   if (!car.url) return 'URL field should not be empty';
   if (!car.make || !validMakes.includes(car.make)) return `Make must be one of the following: ${validMakes.join(', ')}`;
@@ -25,13 +20,7 @@ const validateCar = (car) => {
   return '';
 };
 
-export default function carsApiHandler(req, res) {
-  
-   // Ensure req.query is defined
-
-  const { make = '', model = '', year = '', fuel = '', sortBy = '' } = req.query || {};
-
-
+export default async function carsApiHandler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE');
@@ -40,103 +29,108 @@ export default function carsApiHandler(req, res) {
   if (req.method === 'GET') {
     const { make, model, year, fuel, sortBy } = req.query;
 
-    // Filter cars
-    let filteredCars = cars.filter(car => {
-      return (
-        (make ? car.make.toLowerCase().includes(make.toLowerCase()) : true) &&
-        (model ? car.model.toLowerCase().includes(model.toLowerCase()) : true) &&
-        (year ? car.year === Number(year) : true) &&
-        (fuel ? car.fuel.toLowerCase().includes(fuel.toLowerCase()) : true)
-      );
-    });
+    try {
+      // Build the query dynamically
+      const where = {};
+      if (make) where.make = make;
+      if (model) where.model = model;
+      if (year) where.year = Number(year);
+      if (fuel) where.fuel = fuel;
 
-    
-    // Sort cars
-    if (sortBy) {
-        switch (sortBy) {
-          case 'newest-first':
-            filteredCars.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-            break;
-          case 'oldest-first':
-            filteredCars.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
-            break;
-          case 'price-low-high':
-            filteredCars.sort((a, b) => a.price - b.price);
-            break;
-          case 'price-high-low':
-            filteredCars.sort((a, b) => b.price - a.price);
-            break;
-          case 'year-new-old':
-            filteredCars.sort((a, b) => b.year - a.year);
-            break;
-          case 'year-old-new':
-            filteredCars.sort((a, b) => a.year - b.year);
-            break;
-          case 'km-low-high':
-            filteredCars.sort((a, b) => a.km - b.km);
-            break;
-          case 'km-high-low':
-            filteredCars.sort((a, b) => b.km - a.km);
-            break;
-          default:
-            break;
+      const order = [];
+      if (sortBy) {
+        // Map sortBy values to valid column and direction
+        const sortOptions = {
+          'newest-first': ['dateadded', 'DESC'],
+          'oldest-first': ['dateadded', 'ASC'],
+          'price-low-high': ['price', 'ASC'],
+          'price-high-low': ['price', 'DESC'],
+          'year-new-old': ['year','ASC'],
+          'year-old-new': ['year','DESC'],
+          'km-low-high': ['km','ASC'],
+          'km-high-low': ['km','DESC'],
+        };
+  
+        const [field, direction] = sortOptions[sortBy] || [];
+        if (field && direction) {
+          order.push([field, direction]);
+        } else {
+          return res.status(400).json({ error: 'Invalid sortBy parameter' });
         }
       }
 
-    return res.status(200).json(filteredCars);
+      const cars = await Car.findAll({ where, order });
+      return res.status(200).json(cars || []);
+    } catch (error) {
+      console.error('Error fetching cars:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
 
   if (req.method === 'POST') {
+
+    const carData = { ...req.body };
+
+    const date = new Date().toISOString().split('T')[0];  // This gives 'YYYY-MM-DD'
+
+    // Check if the date is valid
+    if (isNaN(new Date(date))) {
+      console.error("Invalid date detected:", date);
+      return res.status(400).json({ error: 'Invalid date format' });
+    } 
+
+    carData.dateAdded = date; 
+
+    console.log("Car Data before insert:", carData);
+
     const validationError = validateCar(req.body);
     if (validationError) return res.status(400).json({ error: validationError });
 
-    const newCar = { ...req.body, id: cars.length + 1, dateAdded: new Date().toISOString().split('T')[0] };
-    cars.push(newCar);
-
-    broadcastUpdate({ type: 'ADD_CAR', car: newCar });
-
-    return res.status(201).json(newCar);
+    try {
+      const newCar = await Car.create(carData);
+      broadcastUpdate({ type: 'ADD_CAR', car: newCar });
+      return res.status(201).json(newCar);
+    } catch (error) {
+      console.error('Error creating car:', error);
+      return res.status(400).json({ error: error.message });
+    }
   }
 
   if (req.method === 'PATCH') {
     const { id } = req.query;
-    const carIndex = cars.findIndex(car => car.id === Number(id));
 
-    if (carIndex === -1) return res.status(404).json({ error: 'Car not found' });
+    try {
+      const car = await Car.findByPk(id);
+      if (!car) return res.status(404).json({ error: 'Car not found' });
 
-    const validationError = validateCar(req.body);
-    if (validationError) return res.status(400).json({ error: validationError });
+      const validationError = validateCar(req.body);
+      if (validationError) return res.status(400).json({ error: validationError });
 
-    cars[carIndex] = { 
-      ...cars[carIndex], 
-      ...req.body, 
-      dateAdded: req.body.dateAdded || cars[carIndex].dateAdded // Keep existing date if not provided
-    };
-
-    broadcastUpdate({ type: 'EDIT_CAR', car: cars[carIndex] });
-
-
-    return res.status(200).json(cars[carIndex]);
+      await car.update(req.body);
+      broadcastUpdate({ type: 'EDIT_CAR', car });
+      return res.status(200).json(car);
+    } catch (error) {
+      console.error('Error updating car:', error);
+      return res.status(400).json({ error: error.message });
+    }
   }
 
   if (req.method === 'DELETE') {
     const { id } = req.query;
     const carId = Number(id);
-  
-    if (!cars.some((car) => car.id === carId)) {
-      return res.status(404).json({ error: 'Car not found' });
+
+    try {
+      const car = await Car.findByPk(carId);
+      if (!car) return res.status(404).json({ error: 'Car not found' });
+
+      await car.destroy();
+      broadcastUpdate({ type: 'DELETE_CAR', carId });
+      return res.status(200).json({ message: 'Car deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting car:', error);
+      return res.status(400).json({ error: error.message });
     }
-  
-    // Remove the car from the in-memory array
-    cars = cars.filter((car) => car.id !== carId);
-  
-    // Broadcast the deleted car ID to all connected clients
-    broadcastUpdate({ type: 'DELETE_CAR', carId });
-  
-    return res.status(200).json({ message: 'Car deleted successfully' });
   }
-
-
 
   return res.status(405).json({ error: 'Method Not Allowed' });
 }

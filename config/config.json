@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "1234",
+    "database": "car_marketplace",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "_test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "_production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
