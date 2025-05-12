@@ -105,25 +105,41 @@ export default function Home() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const carsPerPage = 3;
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Fetch cars from the server
   useEffect(() => {
-    const fetchCars = async () => {
-      try {
-        const queryParams = new URLSearchParams(filters);
-        if (sortOption) queryParams.append('sortBy', sortOption);
-
-        const response = await fetch(`http://localhost:3000/api/cars?${queryParams.toString()}`);
-        const data = await response.json();
-        setCars(data);
-        updateChartData(data);
-      } catch (error) {
-        console.error('Error fetching cars:', error);
-      }
-    };
-
-    fetchCars();
+    fetchCars(true);
   }, [filters, sortOption]);
+
+  const fetchCars = async (reset = false) => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams({ ...filters });
+      queryParams.append('limit', carsPerPage);
+      queryParams.append('offset', reset ? 0 : cars.length);
+      if (sortOption) queryParams.append('sortBy', sortOption);
+
+      const response = await fetch(`http://localhost:3000/api/cars?${queryParams.toString()}`);
+      const data = await response.json();
+
+      setCars((prevCars) => reset ? data : [...prevCars, ...data]);
+      setHasMore(data.length === carsPerPage);
+      updateChartData(reset ? data : [...cars, ...data]);
+    } catch (error) {
+      console.error('Error fetching cars:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMoreCars = () => {
+    if (!loading && hasMore) {
+      fetchCars();
+    }
+  };
+
 
 
   // update charts after crud operations
@@ -188,6 +204,7 @@ export default function Home() {
       ...prevFilters,
       [name]: value,
     }));
+    setCurrentPage(1);
   };
 
   
@@ -309,7 +326,14 @@ export default function Home() {
       <CarForm newCar={newCar} handleInputChange={(e) => setNewCar({ ...newCar, [e.target.name]: e.target.value })} addCar={addCar} editingCar={editingCar} />
       <CarList cars={currentCars} editCar={editCar} deleteCar={deleteCar} getHighlightClass={getHighlightClass} />
       <Pagination totalPages={totalPages} currentPage={currentPage} handlePageChange={setCurrentPage} />
-      <div className="chart-container">
+        {hasMore && (
+          <div className="load-more-container">
+            <button onClick={loadMoreCars} disabled={loading} className="load-more-button">
+              {loading ? 'Loading...' : 'Load More'}
+            </button>
+          </div>      
+        )}
+    <div className="chart-container">
         <ChartComponent type="line" data={chartDataLine} options={{ responsive: true, maintainAspectRatio: false }} />
         <ChartComponent type="bar" data={chartDataBar} options={{ responsive: true, maintainAspectRatio: false }} />
         <ChartComponent type="pie" data={chartDataPie} options={{ responsive: true, maintainAspectRatio: false }} />

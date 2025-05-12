@@ -27,7 +27,7 @@ export default async function carsApiHandler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'GET') {
-    const { make, model, year, fuel, sortBy } = req.query;
+    const { make, model, year, fuel, sortBy , limit = 10, offset = 0} = req.query;
 
     try {
       // Build the query dynamically
@@ -59,7 +59,7 @@ export default async function carsApiHandler(req, res) {
         }
       }
 
-      const cars = await Car.findAll({ where, order });
+      const cars = await Car.findAll({ where, order, limit: Number(limit), offset: Number(offset) });
       return res.status(200).json(cars || []);
     } catch (error) {
       console.error('Error fetching cars:', error);
