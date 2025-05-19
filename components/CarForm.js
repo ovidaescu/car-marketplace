@@ -3,7 +3,7 @@ import React from 'react';
 export default function CarForm({ newCar, handleInputChange, addCar, editingCar }) {
   return (
     <div className="form-container">
-      <input type="text" name="url" placeholder="URL" value={newCar.photoUrl} onChange={handleInputChange} />
+      <input type="text" name="photoUrl" placeholder="URL" value={newCar.photoUrl} onChange={handleInputChange} />
       <input type="text" name="make" placeholder="Make" value={newCar.make} onChange={handleInputChange} />
       <input type="text" name="model" placeholder="Model" value={newCar.model} onChange={handleInputChange} />
       <input type="text" name="type" placeholder="Type" value={newCar.type} onChange={handleInputChange} />
