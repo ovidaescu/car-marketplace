@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+
+  websocket:
+    build:
+      context: .
+      dockerfile: utils/Dockerfile.websocket
+    ports:
+      - "8081:8081"
