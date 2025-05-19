@@ -245,7 +245,7 @@ export default function Home() {
       });
       */
   
-      setNewCar({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
+      setNewCar({ photoUrl: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
       setEditingCar(null);
     } catch (error) {
       console.error('Error saving car:', error);

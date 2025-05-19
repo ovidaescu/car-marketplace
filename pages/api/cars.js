@@ -8,7 +8,7 @@ const { broadcastUpdate } = require('../../utils/start');
 
 // Server-side validation
 const validateCar = (car) => {
-  if (!car.url) return 'URL field should not be empty';
+  if (!car.photoUrl) return 'URL field should not be empty';
   if (!car.make || !validMakes.includes(car.make)) return `Make must be one of the following: ${validMakes.join(', ')}`;
   if (!car.model || !validModels.includes(car.model)) return `Model must be one of the following: ${validModels.join(', ')}`;
   if (!car.type || !validTypes.includes(car.type)) return `Type must be one of the following: ${validTypes.join(', ')}`;
