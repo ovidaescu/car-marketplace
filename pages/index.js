@@ -8,7 +8,7 @@ import ChartComponent from '../components/ChartComponent';
 
 export default function Home() {
   const [cars, setCars] = useState([]);
-  const [newCar, setNewCar] = useState({ url: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
+  const [newCar, setNewCar] = useState({ photoUrl: '', make: '', model: '', type: '', year: '', km: '', fuel: '', price: '', dateAdded: '' });
   const [editingCar, setEditingCar] = useState(null);
   const [sortOption, setSortOption] = useState('');
   const [filters, setFilters] = useState({ make: '', model: '', year: '', fuel: '' });
