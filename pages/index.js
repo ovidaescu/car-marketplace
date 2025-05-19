@@ -57,7 +57,7 @@ export default function Home() {
   // if you don want to use the socket comment  this below and decomment the setCars in addCar and deleteCar function
   // also comment the broadcast function in the backend
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8081');
+    const ws = new WebSocket('ws://13.61.104.149:8081');
   
     ws.onopen = () => {
       console.log('Connected to WebSocket server');
@@ -121,7 +121,7 @@ export default function Home() {
       queryParams.append('offset', reset ? 0 : cars.length);
       if (sortOption) queryParams.append('sortBy', sortOption);
 
-      const response = await fetch(`http://localhost:3000/api/cars?${queryParams.toString()}`);
+      const response = await fetch(`/api/cars?${queryParams.toString()}`);
       const data = await response.json();
 
       setCars((prevCars) => reset ? data : [...prevCars, ...data]);
@@ -214,8 +214,8 @@ export default function Home() {
     const operation = {
       method: editingCar ? 'PATCH' : 'POST',
       url: editingCar
-        ? `http://localhost:3000/api/cars?id=${editingCar.id}`
-        : 'http://localhost:3000/api/cars',
+        ? `/api/cars?id=${editingCar.id}`
+        : '/api/cars',
       body: newCar,
     };
   
@@ -255,7 +255,7 @@ export default function Home() {
   // Delete a car
   const deleteCar = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/cars?id=${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/cars?id=${id}`, { method: 'DELETE' });
 
       if (!response.ok) {
         alert('Failed to delete car');
