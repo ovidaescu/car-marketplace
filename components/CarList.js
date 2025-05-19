@@ -6,7 +6,7 @@ export default function CarList({ cars, editCar, deleteCar, getHighlightClass })
       {cars.length > 0 ? (
         cars.map((car) => (
           <div key={car.id} className={`car-card ${getHighlightClass(car.price)}`}>
-            <img src={car.url} alt={`${car.make} ${car.model}`} className="car-image" />
+            <img src={car.photoUrl} alt={`${car.make} ${car.model}`} className="car-image" />
             <div className="car-details">
               <h3>{car.make} {car.model}</h3>
               <p>Type: {car.type}</p>
