@@ -17,7 +17,7 @@ const generateRandomCar = () => ({
 
 
 const startWebSocketServer = (port) => {
-  const wss = new WebSocket.Server({ port });
+  const wss = new WebSocket.Server({ host: '0.0.0.0', port });;
 
   const broadcastUpdate = (message, excludeClient = null) => {
     wss.clients.forEach((client) => {
@@ -56,7 +56,7 @@ const startWebSocketServer = (port) => {
     });
   });
 
-  console.log(`WebSocket server running on ws://localhost:${port}`);
+  console.log(`WebSocket server running on ws://0.0.0.0:${port}`);
   return broadcastUpdate;
 
 };
