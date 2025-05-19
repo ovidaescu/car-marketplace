@@ -1,4 +1,3 @@
-# filepath: utils/Dockerfile.websocket
 FROM node:18
 
 WORKDIR /app
