@@ -4,7 +4,6 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Car extends Model {
     static associate(models) {
-      // Define associations here
       Car.belongsTo(models.User, { foreignKey: 'ownerId', as: 'owner' });
     }
   }
@@ -17,32 +16,29 @@ module.exports = (sequelize, DataTypes) => {
     km: DataTypes.INTEGER,
     fuel: DataTypes.STRING,
     price: DataTypes.FLOAT,
-    dateAdded: 
-    {
+    dateAdded: {
       type: DataTypes.DATE,
-      field: 'dateadded',
+      field: 'dateAdded', // <-- match DB column
     },
-    url: 
-    {
+    photoUrl: {
       type: DataTypes.TEXT,
-      field: 'photourl',
+      field: 'photoUrl', // <-- match DB column
     },
-    ownerId:
-    {
+    ownerId: {
       type: DataTypes.INTEGER,
-      field: 'ownerid',
+      field: 'ownerId', // <-- match DB column
     },
     createdAt: {
       type: DataTypes.DATE,
-      field: 'createdat', // Map to lowercase column in the database
+      field: 'createdAt',
     },
     updatedAt: {
       type: DataTypes.DATE,
-      field: 'updatedat', // Map to lowercase column in the database
+      field: 'updatedAt',
     },
   }, {
     sequelize,
-    modelName: 'Car', // Ensure this matches the name used in the `db` object
+    modelName: 'Car',
     tableName: 'cars'
   });
 
