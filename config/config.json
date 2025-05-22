@@ -3,7 +3,7 @@
     "username": "postgres",
     "password": "1234",
     "database": "car_marketplace",
-    "host": "127.0.0.1",
+    "host": "db",
     "dialect": "postgres"
   },
   "test": {
@@ -17,7 +17,7 @@
     "username": "postgres",
     "password": "1234",
     "database": "car_marketplace",
-    "host": "127.0.0.1",
+    "host": "db",
     "dialect": "postgres"
   }
 }
