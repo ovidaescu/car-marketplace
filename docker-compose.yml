@@ -6,12 +6,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=1234
-      - DB_NAME=car_marketplace
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      DB_NAME: car_marketplace
     depends_on:
       - db
 
