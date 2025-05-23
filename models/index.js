@@ -13,6 +13,7 @@ const dbUser = process.env.DB_USER || config.username;
 const dbPassword = process.env.DB_PASSWORD || config.password;
 const dbName = process.env.DB_NAME || config.database;
 
+console.log('Connecting to DB at:', dbHost, dbPort);
 let sequelize;
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
