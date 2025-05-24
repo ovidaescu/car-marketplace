@@ -1,7 +1,10 @@
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 
-let cars = []; // In-memory storage for cars
+const { Car } = require('../models'); // Adjust path as needed
+
+
+// let cars = []; // In-memory storage for cars
 
 
 const generateRandomCar = () => ({
@@ -27,11 +30,16 @@ const startWebSocketServer = (port) => {
     });
   };
 
-  wss.on('connection', (ws) => {
+  wss.on('connection',async (ws) => {
     console.log('Client connected');
 
     // Send initial data
-    ws.send(JSON.stringify({ type: 'INIT', cars }));
+    try {
+      const cars = await Car.findAll({ order: [['id', 'ASC']] });
+      ws.send(JSON.stringify({ type: 'INIT', cars }));
+    } catch (err) {
+      ws.send(JSON.stringify({ type: 'INIT', cars: [] }));
+    }
 
 
     // decomment this if you want to start the thread that generates entities
