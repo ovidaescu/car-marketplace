@@ -57,7 +57,7 @@ export default function Home() {
   // if you don want to use the socket comment  this below and decomment the setCars in addCar and deleteCar function
   // also comment the broadcast function in the backend
   useEffect(() => {
-    const ws = new WebSocket('ws://13.61.104.149:8081');
+    const ws = new WebSocket('wss://13.61.104.149:8081');
   
     ws.onopen = () => {
       console.log('Connected to WebSocket server');
