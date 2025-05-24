@@ -1,23 +1,6 @@
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 
-
-const { Client } = require('pg');
-
-async function loadCarsFromDb() {
-  const client = new Client({
-    host: process.env.DB_HOST || 'db', // 127.0.0.1
-    port: process.env.DB_PORT || 5432,
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '1234',
-    database: process.env.DB_NAME || 'car_marketplace',
-  });
-  await client.connect();
-  const res = await client.query('SELECT * FROM cars');
-  await client.end();
-  return res.rows;
-}
-
 let cars = []; // In-memory storage for cars
 
 
@@ -33,11 +16,7 @@ const generateRandomCar = () => ({
 
 
 
-const startWebSocketServer = async (port) => {
-  
-  cars = await loadCarsFromDb(); // Load cars from DB at startup
-  console.log('Loaded cars:', cars);
-
+const startWebSocketServer = (port) => {
   const wss = new WebSocket.Server({ host: '0.0.0.0', port });;
 
   const broadcastUpdate = (message, excludeClient = null) => {
