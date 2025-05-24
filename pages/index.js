@@ -320,7 +320,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1>Welcome to the Nicusor Dan</h1>
+      <h1>Welcome to the Nicusor Dannn</h1>
       <SortingDropdown sortOption={sortOption} setSortOption={setSortOption} />
       <FilterInputs filters={filters} handleFilterChange={handleFilterChange} />
       <CarForm newCar={newCar} handleInputChange={(e) => setNewCar({ ...newCar, [e.target.name]: e.target.value })} addCar={addCar} editingCar={editingCar} />
