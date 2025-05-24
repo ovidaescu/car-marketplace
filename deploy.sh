@@ -8,8 +8,7 @@ git push
 
 
 # Sync local files to server (excluding node_modules, .git, etc.)
-rsync -avz --exclude 'node_modules' --exclude '.git' ./ ubuntu@ip-172-31-43-13:~/car-marketplace/
-
+rsync -avz --exclude 'node_modules' --exclude '.git' ./ ubuntu@13.61.104.149:~/car-marketplace/
 # SSH into server and rebuild/restart Docker
 ssh ubuntu@13.61.104.149 << 'ENDSSH'
   cd ~/car-marketplace
