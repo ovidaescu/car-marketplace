@@ -61,4 +61,9 @@ const startWebSocketServer = (port) => {
 
 };
 
+if (require.main === module) {
+  // If this file is run directly, start the server
+  startWebSocketServer(8081);
+}
+
 module.exports = { startWebSocketServer }
