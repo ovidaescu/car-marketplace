@@ -11,7 +11,7 @@ git push
 rsync -avz --exclude 'node_modules' --exclude '.git' ./ ubuntu@ip-172-31-43-13:~/car-marketplace/
 
 # SSH into server and rebuild/restart Docker
-ssh ubuntu@ip-172-31-43-13 << 'ENDSSH'
+ssh ubuntu@13.61.104.149 << 'ENDSSH'
   cd ~/car-marketplace
   docker compose down -v --remove-orphans
   docker compose build --no-cache
