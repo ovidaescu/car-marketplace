@@ -1,0 +1,13 @@
+#!/bin/bash
+# Sync local files to server (excluding node_modules, .git, etc.)
+rsync -avz --exclude 'node_modules' --exclude '.git' ./ ubuntu@ip-172-31-43-13:~/car-marketplace/
+
+# SSH into server and rebuild/restart Docker
+ssh ubuntu@ip-172-31-43-13 << 'ENDSSH'
+  cd ~/car-marketplace
+  docker compose down -v --remove-orphans
+  docker compose build --no-cache
+  docker compose up -d
+  docker compose exec web npx sequelize-cli db:migrate
+  docker compose exec web npx sequelize-cli db:seed:all
+ENDSSH
