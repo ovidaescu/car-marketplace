@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     role: DataTypes.INTEGER,
     createdAt: {
       type: DataTypes.DATE,
-      field: 'createdat', // Map to lowercase column in the database
+      field: 'createdAt', // Map to lowercase column in the database
     },
     updatedAt: {
       type: DataTypes.DATE,
