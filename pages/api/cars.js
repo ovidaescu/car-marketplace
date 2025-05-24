@@ -6,7 +6,7 @@ console.log('Car model:', Car);
 console.log('ENV DB_HOST:', process.env.DB_HOST);
 console.log('ENV NODE_ENV:', process.env.NODE_ENV);
 
-const { broadcastUpdate } = require('../../utils/start');
+const  broadcastUpdatePromise  = require('../../utils/start');
 
 // Server-side validation
 const validateCar = (car) => {
@@ -90,6 +90,7 @@ export default async function carsApiHandler(req, res) {
 
     try {
       const newCar = await Car.create(carData);
+      const broadcastUpdate = await broadcastUpdatePromise;
       broadcastUpdate({ type: 'ADD_CAR', car: newCar });
       return res.status(201).json(newCar);
     } catch (error) {
@@ -109,6 +110,7 @@ export default async function carsApiHandler(req, res) {
       if (validationError) return res.status(400).json({ error: validationError });
 
       await car.update(req.body);
+      const broadcastUpdate = await broadcastUpdatePromise;
       broadcastUpdate({ type: 'EDIT_CAR', car });
       return res.status(200).json(car);
     } catch (error) {
@@ -126,6 +128,7 @@ export default async function carsApiHandler(req, res) {
       if (!car) return res.status(404).json({ error: 'Car not found' });
 
       await car.destroy();
+      const broadcastUpdate = await broadcastUpdatePromise;
       broadcastUpdate({ type: 'DELETE_CAR', carId });
       return res.status(200).json({ message: 'Car deleted successfully' });
     } catch (error) {
