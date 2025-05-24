@@ -111,7 +111,7 @@ export default function Home() {
   // Fetch cars from the server
   useEffect(() => {
     fetchCars(true);
-  }, [filters, sortOption]);
+  }, []);
 
   const fetchCars = async (reset = false) => {
     setLoading(true);
