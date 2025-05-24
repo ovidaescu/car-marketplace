@@ -1,4 +1,12 @@
 #!/bin/bash
+set -e
+
+# (Optional) Auto-commit and push to GitHub
+git add .
+git commit -m "Auto-deploy: $(date)" || echo "Nothing to commit"
+git push
+
+
 # Sync local files to server (excluding node_modules, .git, etc.)
 rsync -avz --exclude 'node_modules' --exclude '.git' ./ ubuntu@ip-172-31-43-13:~/car-marketplace/
 
