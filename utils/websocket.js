@@ -6,7 +6,7 @@ const { Client } = require('pg');
 
 async function loadCarsFromDb() {
   const client = new Client({
-    host: process.env.DB_HOST || '127.0.0.1',
+    host: process.env.DB_HOST || 'db', // 127.0.0.1
     port: process.env.DB_PORT || 5432,
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '1234',
