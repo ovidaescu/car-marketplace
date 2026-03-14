@@ -18,23 +18,23 @@ module.exports = (sequelize, DataTypes) => {
     price: DataTypes.FLOAT,
     dateAdded: {
       type: DataTypes.DATE,
-      field: 'dateAdded', // <-- match DB column
+      field: 'dateadded', // <-- match DB column
     },
     photoUrl: {
       type: DataTypes.TEXT,
-      field: 'photoUrl', // <-- match DB column
+      field: 'photourl', // <-- match DB column
     },
     ownerId: {
       type: DataTypes.INTEGER,
-      field: 'ownerId', // <-- match DB column
+      field: 'ownerid', // <-- match DB column
     },
     createdAt: {
       type: DataTypes.DATE,
-      field: 'createdAt',
+      field: 'createdat',
     },
     updatedAt: {
       type: DataTypes.DATE,
-      field: 'updatedAt',
+      field: 'updatedat',
     },
   }, {
     sequelize,
